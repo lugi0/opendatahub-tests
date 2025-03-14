@@ -36,10 +36,10 @@ jobs:
           reactions: '+1'
 
       - name: Acknowledge the review with thumbs up reaction
-        if: ${{ github.event.review }}
+        if: ${{ github.event.review.comment }}
         uses: peter-evans/create-or-update-comment@v4
         with:
-          comment-id: ${{ github.event.review.id }}
+          comment-id: ${{ github.event.review.comment.id }}
           reactions: '+1'
 
       - uses: actions/checkout@v4
