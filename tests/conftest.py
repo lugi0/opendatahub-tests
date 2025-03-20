@@ -16,7 +16,7 @@ from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.namespace import Namespace
-from ocp_resources.resource import get_client
+from ocp_resources.resource import get_client, ResourceEditor
 from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
@@ -259,6 +259,27 @@ def updated_dsc_component_state(
     request: FixtureRequest,
     dsc_resource: DataScienceCluster,
 ) -> Generator[DataScienceCluster, Any, Any]:
+    component_name = request.param["component_name"]
+    desired_state = request.param["desired_state"]
+    # Condition type for component being succesfully reconciled by DSC
+    condition_type = request.param["condition_type"]
+    if dsc_resource.instance.spec.components[component_name].managementState != desired_state:
+        with ResourceEditor(
+            patches={
+                dsc_resource: {
+                    "spec": {
+                        "components": {
+                            f"{component_name}": {"managementState": f"{desired_state}"},
+                        }
+                    }
+                }
+            }
+        ):
+            dsc_resource.wait_for_condition(condition=condition_type, status="True")
+            yield dsc_resource
+    else:
+        LOGGER.warning(f"Component {component_name} was already set to managementState {desired_state}")
+        yield dsc_resource
     with update_components_in_dsc(
         dsc=dsc_resource,
         components={request.param["component_name"]: request.param["desired_state"]},
