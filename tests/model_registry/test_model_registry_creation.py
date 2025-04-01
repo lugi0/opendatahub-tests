@@ -29,21 +29,16 @@ class TestModelRegistryCreation:
     for the duration of this test module.
     """
 
+    # TODO: Switch to Python client
     @pytest.mark.smoke
     def test_registering_model(
         self: Self,
         model_registry_instance_rest_endpoint: str,
         current_client_token: str,
-        updated_dsc_component_state: DataScienceCluster,
+        updated_dsc_component_state,
     ):
-        # address and port need to be split in the client instantiation
-        server, port = model_registry_instance_rest_endpoint.split(":")
-        registry = ModelRegistry(
-            server_address=f"{Protocols.HTTPS}://{server}",
-            port=port,
-            author="opendatahub-test",
-            user_token=current_client_token,
-            is_secure=False,
+        cmd = generate_register_model_command(
+            endpoint=model_registry_instance_rest_endpoint, token=current_client_token
         )
         model = registry.register_model(
             name=MODEL_NAME,
